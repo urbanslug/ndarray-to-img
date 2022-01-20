@@ -56,7 +56,7 @@ use image::{RgbImage, Rgb};
 use image::error::ImageResult;
 use ndarray::{Array2};
 
-
+/// Configuration for the output image and library.
 pub struct Config {
 		pub verbosity: u8,
 		pub annotate_image: bool,
