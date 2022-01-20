@@ -2,8 +2,8 @@
 Create an RGB [image](https://docs.rs/image/0.23.14/image/index.html)
 out of a 2D [ndarray](https://docs.rs/ndarray/0.15.4/ndarray/index.html) matrix.
 
-Anything larger than 0 (>= 1) is  black and 0 is represented by white
-Currently using a matrix u8 but no reason to limit it to u8
+Meant to visualize sparse matrices.
+Values >= 1 are represented by black cells and zeros by white cells.
 
 For example, to generate a 100x100 image (in actuality a 101x101 image) out
 of a 10x10 matrix.
@@ -55,8 +55,10 @@ assert_eq!(std::fs::remove_file(image_name).unwrap(), ());
 use image::{RgbImage, Rgb};
 use image::error::ImageResult;
 use ndarray::{Array2};
+use num;
 
 /// Configuration for the output image and library.
+#[derive(Clone)]
 pub struct Config {
 		pub verbosity: u8,
 		pub annotate_image: bool,
@@ -75,7 +77,8 @@ const BLUE: Rgb<u8> = Rgb([0, 0, 255]);
 /// Scale the 2 dimensional matrix by a scaling factor set in [Config](self::Config).
 ///
 /// Uses `floor(pos / scaling_factor)`.
-pub fn scale_matrix(matrix: &Array2<u8>, config: &Config) -> Array2<u8> {
+// TODO: do we pay a cost for clone?
+pub fn scale_matrix<T: num::Unsigned + Clone>(matrix: &Array2<T>, config: &Config) -> Array2<T> {
 		if config.verbosity > 2 {
 				eprintln!("[ndarray-to-img::scale_image]");
 		}
@@ -94,7 +97,7 @@ pub fn scale_matrix(matrix: &Array2<u8>, config: &Config) -> Array2<u8> {
 		let scaled_i_max = i_max * scaling_factor; // scaled rows
 		let scaled_j_max = j_max * scaling_factor; // scaled cols
 
-		let mut scaled_matrix = Array2::<u8>::zeros((scaled_i_max, scaled_j_max));
+		let mut scaled_matrix = Array2::<T>::zeros((scaled_i_max, scaled_j_max));
 
 		let scaling_factor = config.scaling_factor as f64;
 
@@ -104,16 +107,20 @@ pub fn scale_matrix(matrix: &Array2<u8>, config: &Config) -> Array2<u8> {
 						let old_i = (i as f64/scaling_factor).floor() as usize;
 						let old_j = (j as f64/scaling_factor).floor() as usize;
 
-						scaled_matrix[[i, j]] = matrix[[old_i, old_j]];
+						scaled_matrix[[i, j]] = matrix[[old_i, old_j]].clone();
 				}
 		}
 
 		scaled_matrix
-
 }
 
 /// Generate the visualization of a 2D matrix from ndarray.
-pub fn generate_image(matrix: &Array2<u8>, config: &Config, output_image_path: &str) -> ImageResult<()>{
+pub fn generate_image<T>(matrix: &Array2<T>,
+											config: &Config,
+											output_image_path: &str
+) -> ImageResult<()>
+where T: num::Unsigned
+{
 		if matrix.ndim() != 2 {
 				panic!("[ndarray-to-img::generate_image] Expected a 2D matrix")
 		}
@@ -160,7 +167,7 @@ pub fn generate_image(matrix: &Array2<u8>, config: &Config, output_image_path: &
 
 						// show pixel
 						// we have to flip these to access the right cell in the matrix
-						if matrix[[y as usize, x as usize]] != 0 {
+						if matrix[[y as usize, x as usize]] != num::zero() {
 								img.put_pixel(x as u32, y as u32, BLACK);
 						} else {
 								img.put_pixel(x as u32, y as u32, WHITE);
@@ -172,40 +179,34 @@ pub fn generate_image(matrix: &Array2<u8>, config: &Config, output_image_path: &
 		img.save(output_image_path)
 }
 
-
-
-
 #[cfg(test)]
 mod tests {
 		use super::*;
 
-		const CLEANUP_TESTS: bool = true;
+		mod tests_config {
+				pub const CLEANUP_TESTS: bool = true;
 
-		#[test]
-    fn test_scale_matrix() {
-				let config =  Config {
+				pub static CONFIG: crate::Config =  crate::Config {
 						verbosity: 1,
 						annotate_image: true,
 						draw_diagonal: true,
 						draw_boundaries: true,
 						scaling_factor: 10,
 				};
+		}
 
+		#[test]
+    fn test_scale_matrix() {
         let matrix = Array2::<u8>::zeros((10, 10));
-				let scaled_matrix = scale_matrix(&matrix, &config);
+				let scaled_matrix = scale_matrix(&matrix, &tests_config::CONFIG);
 
 				assert_eq!(scaled_matrix.shape(), &[100, 100]);
     }
 
     #[test]
     fn test_generate_image() {
-				let config = Config {
-						verbosity: 1,
-						annotate_image: true,
-						draw_diagonal: true,
-						draw_boundaries: true,
-						scaling_factor: 50,
-				};
+				let mut config = tests_config::CONFIG.clone();
+				config.scaling_factor = 50;
 
         let mut matrix = Array2::<u8>::zeros((10, 10));
 				matrix[[1,2]] = 1;
@@ -215,7 +216,7 @@ mod tests {
 
 				// clean up tests
 				// let failed clean up result in error
-				if CLEANUP_TESTS {
+				if tests_config::CLEANUP_TESTS {
 						assert_eq!(std::fs::remove_file(image_name).unwrap(), ());
 				}
     }

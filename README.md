@@ -1,9 +1,8 @@
 Create an RGB [image](https://docs.rs/image/0.23.14/image/type.RgbImage.html)
 out of a 2D [ndarray](https://docs.rs/ndarray/0.15.4/ndarray/index.html) matrix.
 
-Anything larger than 0 (>= 1) is  black and 0 is represented by white
-
-Currently using a matrix u8 but no reason to limit it to u8.
+Visualize sparse matrices.
+Values >= 1 are represented by black cells and zeros by white cells.
 
 For example, to generate the below 500x500 image
 (in actuality a 501x501 image) out of a 10x10 matrix.
