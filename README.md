@@ -45,6 +45,3 @@ let scaled_matrix = scale_matrix(&matrix, &config);
 let image_name = "image.png";
 assert_eq!(generate_image(&scaled_matrix, &config, image_name).unwrap(), ());
 ```
-
-
-
