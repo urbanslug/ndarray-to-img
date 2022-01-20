@@ -8,7 +8,7 @@ Currently using a matrix u8 but no reason to limit it to u8.
 For example, to generate the below 500x500 image
 (in actuality a 501x501 image) out of a 10x10 matrix.
 
-![test image matrix](./Figures/test_image.png)
+![test image matrix](./Figures/test_image_500x500.png)
 
 ```
 let config = Config {
