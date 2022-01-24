@@ -16,6 +16,7 @@ use ndarray::{Array2};
 
 let config = Config {
     verbosity: 0,
+    with_color: false,
     annotate_image: true,
     draw_diagonal: true,
     draw_boundaries: true,
@@ -52,7 +53,7 @@ assert_eq!(std::fs::remove_file(image_name).unwrap(), ());
 ```
 */
 
-use image::{RgbImage, Rgb};
+use image::{RgbaImage, Rgba};
 use image::error::ImageResult;
 use ndarray::{Array2};
 use num;
@@ -61,6 +62,7 @@ use num;
 #[derive(Clone)]
 pub struct Config {
 		pub verbosity: u8,
+		pub with_color: bool,
 		pub annotate_image: bool,
 		pub draw_diagonal: bool,
 		pub draw_boundaries: bool, // draw row and column boundaries?
@@ -68,17 +70,20 @@ pub struct Config {
 }
 
 // Colors
-const BLACK: Rgb<u8>  = Rgb([0, 0, 0]);
-const WHITE: Rgb<u8> = Rgb([255, 255, 255]);
-const RED: Rgb<u8> = Rgb([255, 0, 0]);
-const _GREEN: Rgb<u8> = Rgb([0, 255, 0]);
-const BLUE: Rgb<u8> = Rgb([0, 0, 255]);
+const BLACK: Rgba<u8>  = Rgba([0, 0, 0, 255]);
+const WHITE: Rgba<u8> = Rgba([255, 255, 255, 255]);
+const RED: Rgba<u8> = Rgba([255, 0, 0,  125]);
+const _GREEN: Rgba<u8> = Rgba([0, 255, 0,  255]);
+const BLUE: Rgba<u8> = Rgba([0, 0, 255,  255]);
 
 /// Scale the 2 dimensional matrix by a scaling factor set in [Config](self::Config).
 ///
 /// Uses `floor(pos / scaling_factor)`.
 // TODO: do we pay a cost for clone?
-pub fn scale_matrix<T: num::Unsigned + Clone>(matrix: &Array2<T>, config: &Config) -> Array2<T> {
+pub fn scale_matrix<T>(matrix: &Array2<T>, config: &Config) -> Array2<T>
+where
+		T: num::Unsigned + Clone
+{
 		if config.verbosity > 2 {
 				eprintln!("[ndarray-to-img::scale_image]");
 		}
@@ -114,12 +119,28 @@ pub fn scale_matrix<T: num::Unsigned + Clone>(matrix: &Array2<T>, config: &Confi
 		scaled_matrix
 }
 
+pub fn max<T>(matrix: &Array2<T>) -> T
+where
+		T: num::Unsigned + Copy + std::cmp::PartialOrd
+{
+		let mut matrix_iter = matrix.iter();
+		let mut max = *matrix_iter.next().unwrap();
+
+		for val in matrix_iter {
+				if *val > max {
+						max = *val;
+				}
+		}
+		max
+}
+
 /// Generate the visualization of a 2D matrix from ndarray.
-pub fn generate_image<T>(matrix: &Array2<T>,
-											config: &Config,
-											output_image_path: &str
+pub fn generate_image<T>(
+		matrix: &Array2<T>,
+		config: &Config,
+		output_image_path: &str
 ) -> ImageResult<()>
-where T: num::Unsigned
+where T: num::Unsigned + num::cast::ToPrimitive + Copy + std::cmp::PartialOrd
 {
 		if matrix.ndim() != 2 {
 				panic!("[ndarray-to-img::generate_image] Expected a 2D matrix")
@@ -135,6 +156,10 @@ where T: num::Unsigned
 				}
 		}
 
+		let mut max_value = num::zero();
+		if config.with_color {
+				max_value = max(matrix);
+		}
 
 		let matrix_dimensions: &[usize] = matrix.shape();
 
@@ -142,7 +167,7 @@ where T: num::Unsigned
 		let x_max = matrix_dimensions[1] as u32; // cols
 
 		// we add one to allow drawing the last vertical rows and cols
-		let mut img = RgbImage::new(x_max+1, y_max+1);
+		let mut img = RgbaImage::new(x_max+1, y_max+1);
 
 		let scaling_factor = config.scaling_factor as usize;
 
@@ -168,7 +193,21 @@ where T: num::Unsigned
 						// show pixel
 						// we have to flip these to access the right cell in the matrix
 						if matrix[[y as usize, x as usize]] != num::zero() {
-								img.put_pixel(x as u32, y as u32, BLACK);
+
+								if config.with_color {
+										let mut red = [255, 0, 0,  255];
+										let value = matrix[[y as usize, x as usize]];
+										let value = value.to_f64().unwrap();
+										let max_value = max_value.to_f64().unwrap();
+										let m = u8::MAX as f64;
+										let alpha_channel = ((value/max_value)*m).ceil() as u8;
+										red[3] = alpha_channel;
+										let red = Rgba::from(red);
+
+										img.put_pixel(x as u32, y as u32, red);
+								} else {
+										img.put_pixel(x as u32, y as u32, BLACK);
+								}
 						} else {
 								img.put_pixel(x as u32, y as u32, WHITE);
 						}
@@ -188,6 +227,7 @@ mod tests {
 
 				pub static CONFIG: crate::Config =  crate::Config {
 						verbosity: 1,
+						with_color: true,
 						annotate_image: true,
 						draw_diagonal: true,
 						draw_boundaries: true,
@@ -203,6 +243,18 @@ mod tests {
 				assert_eq!(scaled_matrix.shape(), &[100, 100]);
     }
 
+		#[test]
+    fn test_scale_max() {
+        let mut matrix = Array2::<u8>::zeros((10, 10));
+				matrix[[1,2]] = 1;
+				matrix[[4,5]] = 10;
+				matrix[[2,5]] = 7;
+				matrix[[5,5]] = 5;
+				let max_value = max(&matrix);
+
+				assert_eq!(10, max_value);
+    }
+
     #[test]
     fn test_generate_image() {
 				let mut config = tests_config::CONFIG.clone();
@@ -210,6 +262,9 @@ mod tests {
 
         let mut matrix = Array2::<u8>::zeros((10, 10));
 				matrix[[1,2]] = 1;
+				matrix[[4,5]] = 10;
+				matrix[[2,5]] = 7;
+				matrix[[5,5]] = 5;
 				let scaled_matrix = scale_matrix(&matrix, &config);
 				let image_name = "test_image.png";
         assert_eq!(generate_image(&scaled_matrix, &config, image_name).unwrap(), ());
