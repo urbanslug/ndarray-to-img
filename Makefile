@@ -11,7 +11,7 @@ all: target/debug/libdouble_input.$(EXT)
 	LD_LIBRARY_PATH=./target/debug/ ./build/run
 
 setup:
-	@mkdir -p $(FOLDER_BIN) $(FOLDER_BUILD)
+	@mkdir -p $(FOLDER_BUILD)
 
 target/debug/libdouble_input.$(EXT): src/lib.rs Cargo.toml
 	cargo build
