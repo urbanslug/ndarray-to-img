@@ -1,3 +1,23 @@
+## Compile
+
+Compile rust to a static library *ndarray_to_img.a* using `cargo build`
+
+Compile the static C++ wrapper library to get
+```
+g++ -c src/wrapper.cpp -L ./target/debug/ -lndarray_to_img -static -o ndarray_to_img.o
+```
+
+Generate static library
+```
+ar rvs libndarray_to_img.a ndarray_to_img.o
+```
+
+Run the example
+...
+
+
+## Explanation
+
 Create an RGB [image](https://docs.rs/image/0.23.14/image/type.RgbImage.html)
 out of a 2D [ndarray](https://docs.rs/ndarray/0.15.4/ndarray/index.html) matrix.
 
