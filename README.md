@@ -2,23 +2,21 @@
 
 Compile rust to a static library *ndarray_to_img.a* using `cargo build`
 
-Compile the static C++ wrapper library to get
+Compile the static C++ wrapper library to get *ndarray_to_img.o*
 ```
-g++ -c src/wrapper.cpp -L ./target/debug/ -lndarray_to_img -static -o ndarray_to_img.o
+g++ -c src/ndarray_to_img.hpp -L ./target/debug/ -lndarray_to_img -static -o ndarray_to_img.o
 ```
 
 Generate static library
 ```
-ar rvs libndarray_to_img.a ndarray_to_img.o
+ar yrvs libndarray_to_img.a ndarray_to_img.o
 ```
 
 Run the example
 ```
-g++ examples/main.cpp -L . -lndarray_to_img -o run
-examples/main.cpp:1:10: fatal error: ndarray_to_img.h: No such file or directory
-    1 | #include "ndarray_to_img.h"
-      |          ^~~~~~~~~~~~~~~~~~
-compilation terminated.
+g++ -I src examples/main.cpp -L . -lndarray_to_img -o run
+/usr/bin/ld: ./libndarray_to_img.a: error adding symbols: archive has no index; run ranlib to add one
+collect2: error: ld returned 1 exit status
 ```
 
 
