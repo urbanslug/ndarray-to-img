@@ -1,3 +1,7 @@
+# ndarray to img
+
+## Explanation
+
 Create an RGB [image](https://docs.rs/image/0.23.14/image/type.RgbImage.html)
 out of a 2D [ndarray](https://docs.rs/ndarray/0.15.4/ndarray/index.html) matrix.
 
@@ -44,3 +48,7 @@ let scaled_matrix = scale_matrix(&matrix, &config);
 let image_name = "image.png";
 assert_eq!(generate_image(&scaled_matrix, &config, image_name).unwrap(), ());
 ```
+
+## Compile
+C++
+`make`
