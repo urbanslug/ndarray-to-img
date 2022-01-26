@@ -1,9 +1,4 @@
 #include "ndarray_to_img.h"
-#include <cstddef>
-#include <cstdint>
-#include <iostream>
-#include <tuple>
-#include <vector>
 
 void do_cells() {
   color_t black (0, 0, 0, 0);
