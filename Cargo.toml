@@ -8,11 +8,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "double_input"
+name = "ndarray_to_img"
 crate-type = ["dylib"]
 
 [dependencies]
-ndarray = "^0.15.4"
-image = "^0.23.14"
-num = "^0.4.0"
 libc = "0.2"
+num = "^0.4.0"
+image = "^0.23.14"
+ndarray = "^0.15.4"
