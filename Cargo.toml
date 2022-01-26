@@ -9,8 +9,8 @@ edition = "2021"
 
 [lib]
 name = "ndarray_to_img"
-# crate-type = ["dylib"]
-crate-type = ["staticlib"]
+crate-type = ["dylib"]
+# crate-type = ["staticlib"]
 
 
 [dependencies]

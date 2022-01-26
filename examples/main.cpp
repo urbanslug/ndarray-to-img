@@ -1,5 +1,5 @@
 #include <vector>
-#include "../src/ndarray_to_img.hpp"
+#include "../src/ndarray_to_img.h"
 
 void do_cells() {
   color_t black (0, 0, 0, 0);
@@ -17,5 +17,4 @@ void do_cells() {
 
 int main() {
 	do_cells();
-
 }

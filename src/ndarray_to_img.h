@@ -20,10 +20,8 @@ struct color_t {
 struct cell_t {
   position_t pos;
   int value;
-  // RGB and alpha channel
   color_t color;
 };
-
 
 extern "C" void read_cells(cell_t const *cell, std::size_t length,
                            std::size_t nrow, std::size_t ncol);

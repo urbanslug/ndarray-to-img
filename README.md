@@ -1,24 +1,4 @@
-## Compile
-
-Compile rust to a static library *ndarray_to_img.a* using `cargo build`
-
-Compile the static C++ wrapper library to get *ndarray_to_img.o*
-```
-g++ -c src/ndarray_to_img.hpp -L ./target/debug/ -lndarray_to_img -static -o ndarray_to_img.o
-```
-
-Generate static library
-```
-ar yrvs libndarray_to_img.a ndarray_to_img.o
-```
-
-Run the example
-```
-g++ -I src examples/main.cpp -L . -lndarray_to_img -o run
-/usr/bin/ld: ./libndarray_to_img.a: error adding symbols: archive has no index; run ranlib to add one
-collect2: error: ld returned 1 exit status
-```
-
+# ndarray to img
 
 ## Explanation
 
@@ -68,3 +48,7 @@ let scaled_matrix = scale_matrix(&matrix, &config);
 let image_name = "image.png";
 assert_eq!(generate_image(&scaled_matrix, &config, image_name).unwrap(), ());
 ```
+
+## Compile
+C++
+`make`
