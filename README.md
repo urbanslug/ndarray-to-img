@@ -13,7 +13,13 @@ ar rvs libndarray_to_img.a ndarray_to_img.o
 ```
 
 Run the example
-...
+```
+g++ examples/main.cpp -L . -lndarray_to_img -o run
+examples/main.cpp:1:10: fatal error: ndarray_to_img.h: No such file or directory
+    1 | #include "ndarray_to_img.h"
+      |          ^~~~~~~~~~~~~~~~~~
+compilation terminated.
+```
 
 
 ## Explanation
