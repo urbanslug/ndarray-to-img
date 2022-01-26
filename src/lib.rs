@@ -3,6 +3,7 @@ use std::slice;
 use ndarray::{Array2, Array};
 
 pub mod rusty;
+pub use rusty::*;
 
 #[repr(C)]
 #[derive(Debug)]
