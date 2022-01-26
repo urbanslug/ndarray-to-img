@@ -1,4 +1,5 @@
 #include "ndarray_to_img.h"
+#include <vector>
 
 void do_cells() {
   color_t black (0, 0, 0, 0);
