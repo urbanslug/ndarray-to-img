@@ -9,7 +9,8 @@ edition = "2021"
 
 [lib]
 name = "ndarray_to_img"
-crate-type = ["dylib"]
+# uncomment this for C++
+# crate-type = ["dylib"]
 # crate-type = ["staticlib"]
 
 
