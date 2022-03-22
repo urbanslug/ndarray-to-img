@@ -17,7 +17,7 @@ of a 10x10 matrix.
 
 use image::{RgbaImage, Rgba};
 use image::error::ImageResult;
-use ndarray::{Array, Array2};
+use ndarray::{Array, Array2, ArrayBase, Dim, OwnedRepr};
 use num;
 
 /// Configuration for the output image and library.
@@ -119,7 +119,6 @@ where
 		(min, max)
 }
 
-
 /// Generate the visualization of a 2D matrix from ndarray.
 pub fn generate_image<T>(
 		matrix: &Array2<Option<T>>,
@@ -128,89 +127,100 @@ pub fn generate_image<T>(
 ) -> ImageResult<()>
 where T: num::Zero + num::cast::ToPrimitive + Copy + std::cmp::PartialOrd
 {
-		if matrix.ndim() != 2 {
-				panic!("[ndarray-to-img::generate_image] Expected a 2D matrix")
-		}
-		if config.verbosity > 2 {
-				eprintln!("[ndarray-to-img::generate_image]");
-		}
+	if matrix.ndim() != 2 {
+		panic!("[ndarray-to-img::generate_image] Expected a 2D matrix")
+	}
+	if config.verbosity > 2 {
+		eprintln!("[ndarray-to-img::generate_image]");
+	}
 
-		if config.verbosity > 0 {
-				eprintln!("Generating image {}", output_image_path);
-				if config.verbosity > 1 {
-						eprintln!("scaling factor: {}", config.scaling_factor);
+	if config.verbosity > 0 {
+		eprintln!("Generating image {}", output_image_path);
+		if config.verbosity > 1 {
+			eprintln!("scaling factor: {}", config.scaling_factor);
+		}
+	}
+
+	let (min, max) = max_and_min(matrix);
+
+
+
+    // let (y_max, x_max) = matrix.dim();
+	let matrix_dimensions: &[usize] = matrix.shape();
+
+	let y_max = matrix_dimensions[0] as u32; // rows
+	let x_max = matrix_dimensions[1] as u32; // cols
+
+	// we add one to allow drawing the last vertical rows and cols
+	let mut img = RgbaImage::new(x_max+1, y_max+1);
+
+	let scaling_factor = config.scaling_factor as usize;
+
+	// generate the image
+	for x in 0..=x_max {
+		for y in 0..=y_max {
+			// Image annotations
+
+			if config.annotate_image {
+				// Diagonals
+				if config.draw_diagonal && x == y {
+					img.put_pixel(x as u32, y as u32, RED);
+					continue;
 				}
-		}
 
-		let (min, max) = max_and_min(matrix);
-
-		let matrix_dimensions: &[usize] = matrix.shape();
-
-		let y_max = matrix_dimensions[0] as u32; // rows
-		let x_max = matrix_dimensions[1] as u32; // cols
-
-		// we add one to allow drawing the last vertical rows and cols
-		let mut img = RgbaImage::new(x_max+1, y_max+1);
-
-		let scaling_factor = config.scaling_factor as usize;
-
-		// generate the image
-		for x in 0..=x_max {
-				for y in 0..=y_max {
-						// Image annotations
-
-						if config.annotate_image {
-								// Diagonals
-								if config.draw_diagonal && x == y {
-										img.put_pixel(x as u32, y as u32, RED);
-										continue;
-								}
-
-								// vertical and horizontal separators
-								if  config.draw_boundaries && (x as usize % scaling_factor == 0) || (y as usize % scaling_factor == 0) {
-										img.put_pixel(x as u32, y as u32, BLUE);
-										continue;
-								}
-						}
-
-						// show pixel
-						// we have to flip these to access the right cell in the matrix
-						match matrix[[y as usize, x as usize]] {
-								None => img.put_pixel(x as u32, y as u32, WHITE),
-								Some(v) => {
-										if v > num::zero() {
-												let mut red = [255, 0, 0,  255];
-												let value = v.to_f64().unwrap();
-												let max_value = max.to_f64().unwrap();
-												let m = u8::MAX as f64;
-												let alpha_channel = ((value/max_value)*m).ceil() as u8;
-												red[3] = alpha_channel;
-												let red = Rgba::from(red);
-
-												img.put_pixel(x as u32, y as u32, red);
-										} else {
-												let mut black = [0, 0, 0,  255];
-
-												let value = v.to_f64().unwrap();
-												let value = num::abs(value);
-
-												let min_value = min.to_f64().unwrap();
-												let min_value = num::abs(min_value);
-
-												let m = u8::MAX as f64;
-												let alpha_channel = ((value/min_value)*m).ceil() as u8;
-												black[3] = alpha_channel;
-												let black = Rgba::from(black);
-
-												img.put_pixel(x as u32, y as u32, black);
-										}
-								}
-						}
+				// vertical and horizontal separators
+				if  config.draw_boundaries
+                    && (x as usize % scaling_factor == 0)
+                    || (y as usize % scaling_factor == 0)
+                {
+					img.put_pixel(x as u32, y as u32, BLUE);
+					continue;
 				}
-		}
+			}
 
-		// save it
-		img.save(output_image_path)
+
+            if !config.annotate_image && x == x_max || y == y_max {
+                continue;
+            }
+
+			// show pixel
+			// we have to flip these to access the right cell in the matrix
+			match matrix[[y as usize, x as usize]] {
+				None => img.put_pixel(x as u32, y as u32, WHITE),
+				Some(v) => {
+					if v > num::zero() {
+						let mut red = [255, 0, 0,  255];
+						let value = v.to_f64().unwrap();
+						let max_value = max.to_f64().unwrap();
+						let m = u8::MAX as f64;
+						let alpha_channel = ((value/max_value)*m).ceil() as u8;
+						red[3] = alpha_channel;
+						let red = Rgba::from(red);
+
+						img.put_pixel(x * scaling_factor as u32, y * scaling_factor as u32, red);
+					} else {
+						let mut black = [0, 0, 0,  255];
+
+						let value = v.to_f64().unwrap();
+						let value = num::abs(value);
+
+						let min_value = min.to_f64().unwrap();
+						let min_value = num::abs(min_value);
+
+						let m = u8::MAX as f64;
+						let alpha_channel = ((value/min_value)*m).ceil() as u8;
+						black[3] = alpha_channel;
+						let black = Rgba::from(black);
+
+						img.put_pixel(x as u32, y as u32, black);
+					}
+				}
+			}
+		}
+	}
+
+	// save it
+	img.save(output_image_path)
 }
 
 #[cfg(test)]
