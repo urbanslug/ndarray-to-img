@@ -1,4 +1,6 @@
-/// Configuration for the output image and library.
+//! Types
+
+/// Configuration for the output image.
 #[derive(Clone)]
 pub struct Config {
 	pub verbosity: u8,

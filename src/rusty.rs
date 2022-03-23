@@ -1,19 +1,7 @@
-/*!
-Create an RGB [image](https://docs.rs/image/0.23.14/image/index.html)
-out of a 2D [ndarray](https://docs.rs/ndarray/0.15.4/ndarray/index.html) matrix.
+//! Deprecated
 
-Meant to visualize sparse matrices.
-Values >= 1 are represented by black cells and zeros by white cells.
-
-For example, to generate a 100x100 image (in actuality a 101x101 image) out
-of a 10x10 matrix.
-
-# Example
-
-```
-
-```
-*/
+// TODO: remove this module entirely
+// Do not move before moving tests over as well
 
 use image::{RgbaImage, Rgba};
 use image::error::ImageResult;
@@ -21,100 +9,95 @@ use ndarray::{Array, Array2};
 use num;
 
 use crate::types;
+use crate::constants::colors::*;
 
-// Colors
-const _BLACK: Rgba<u8>  = Rgba([0, 0, 0, 255]);
-const _GREEN: Rgba<u8> = Rgba([0, 255, 0,  255]);
-const WHITE: Rgba<u8> = Rgba([255, 255, 255, 255]);
-const RED: Rgba<u8> = Rgba([255, 0, 0,  125]);
-const BLUE: Rgba<u8> = Rgba([0, 0, 255,  255]);
 
-/// Scale the 2 dimensional matrix by a scaling factor set in [Config](self::Config).
+/// (Deprecated) Scale the 2 dimensional matrix by a scaling factor set in [Config](crate::Config).
 ///
 /// Uses `floor(pos / scaling_factor)`.
 // TODO: do we pay a cost for clone?
 pub fn scale_matrix<T>(matrix: &Array2<Option<T>>, config: &types::Config) -> Array2<Option<T>>
 where
-		T: Clone
+	T: Clone
 {
-		if config.verbosity > 2 {
-				eprintln!("[ndarray-to-img::scale_image]");
+	if config.verbosity > 2 {
+		eprintln!("[ndarray-to-img::scale_image]");
+	}
+
+	if config.scaling_factor == 1 {
+		return matrix.clone();
+	}
+
+	let scaling_factor = config.scaling_factor as usize;
+
+	let matrix_dimensions: &[usize] = matrix.shape();
+
+	let i_max: usize = matrix_dimensions[0]; // rows
+	let j_max: usize = matrix_dimensions[1]; // cols
+
+	let scaled_i_max = i_max * scaling_factor; // scaled rows
+	let scaled_j_max = j_max * scaling_factor; // scaled cols
+
+	let mut scaled_matrix: Array2<Option<T>> = Array::from_elem((scaled_i_max, scaled_j_max), None);
+
+	let scaling_factor = config.scaling_factor as f64;
+
+	for i in 0..scaled_i_max {
+		for j in 0..scaled_j_max {
+			// TODO: should it be  B_i,j = A_ceil(i/5),ceil(j/5) ?
+			let old_i = (i as f64/scaling_factor).floor() as usize;
+			let old_j = (j as f64/scaling_factor).floor() as usize;
+
+			scaled_matrix[[i, j]] = matrix[[old_i, old_j]].clone();
 		}
+	}
 
-		if config.scaling_factor == 1 {
-				return matrix.clone();
-		}
-
-		let scaling_factor = config.scaling_factor as usize;
-
-		let matrix_dimensions: &[usize] = matrix.shape();
-
-		let i_max: usize = matrix_dimensions[0]; // rows
-		let j_max: usize = matrix_dimensions[1]; // cols
-
-		let scaled_i_max = i_max * scaling_factor; // scaled rows
-		let scaled_j_max = j_max * scaling_factor; // scaled cols
-
-		let mut scaled_matrix: Array2<Option<T>> = Array::from_elem((scaled_i_max, scaled_j_max), None);
-
-		let scaling_factor = config.scaling_factor as f64;
-
-		for i in 0..scaled_i_max {
-				for j in 0..scaled_j_max {
-						// TODO: should it be  B_i,j = A_ceil(i/5),ceil(j/5) ?
-						let old_i = (i as f64/scaling_factor).floor() as usize;
-						let old_j = (j as f64/scaling_factor).floor() as usize;
-
-						scaled_matrix[[i, j]] = matrix[[old_i, old_j]].clone();
-				}
-		}
-
-		scaled_matrix
+	scaled_matrix
 }
 
-pub fn max_and_min<T>(matrix: &Array2<Option<T>>) -> (T, T)
+fn max_and_min<T>(matrix: &Array2<Option<T>>) -> (T, T)
 where
-		T: num::Zero + Copy + std::cmp::PartialOrd
+	T: num::Zero + Copy + std::cmp::PartialOrd
 {
-		// find a start value
-		let mut max = num::zero();
-		let mut min = num::zero();
+	// find a start value
+	let mut max = num::zero();
+	let mut min = num::zero();
 
-		for opt_val in matrix.iter() {
-				match opt_val {
-						Some(x) => {
-								max = *x;
-								min = *x;
-								break;
-						},
-						_ => {}
-				}
-		};
-
-		// compare against all other values
-		for opt_val in matrix.iter() {
-				match opt_val {
-						Some(val) => {
-								if *val > max {
-										max = *val
-								}
-
-								if *val < min {
-										min = *val
-								}
-						},
-						_ => {}
-				}
+	for opt_val in matrix.iter() {
+		match opt_val {
+			Some(x) => {
+				max = *x;
+				min = *x;
+				break;
+			},
+			_ => {}
 		}
+	};
 
-		(min, max)
+	// compare against all other values
+	for opt_val in matrix.iter() {
+		match opt_val {
+			Some(val) => {
+				if *val > max {
+					max = *val
+				}
+
+				if *val < min {
+					min = *val
+				}
+			},
+			_ => {}
+		}
+	}
+
+	(min, max)
 }
 
-/// Generate the visualization of a 2D matrix from ndarray.
+/// (Deprecated) Generate the visualization of a 2D matrix from ndarray.
 pub fn generate_image<T>(
-		matrix: &Array2<Option<T>>,
-		config: &Config,
-		output_image_path: &str
+	matrix: &Array2<Option<T>>,
+	config: &types::Config,
+	output_image_path: &str
 ) -> ImageResult<()>
 where T: num::Zero + num::cast::ToPrimitive + Copy + std::cmp::PartialOrd
 {
@@ -186,7 +169,7 @@ where T: num::Zero + num::cast::ToPrimitive + Copy + std::cmp::PartialOrd
 						red[3] = alpha_channel;
 						let red = Rgba::from(red);
 
-						img.put_pixel(x * scaling_factor as u32, y * scaling_factor as u32, red);
+						img.put_pixel(x as u32, y as u32, red);
 					} else {
 						let mut black = [0, 0, 0,  255];
 
@@ -214,68 +197,57 @@ where T: num::Zero + num::cast::ToPrimitive + Copy + std::cmp::PartialOrd
 
 #[cfg(test)]
 mod tests {
-		use super::*;
+	use super::*;
+    use crate::tests_prelude;
 
-		mod tests_config {
-				pub const CLEANUP_TESTS: bool = false;
 
-				pub static CONFIG: super::Config =  super::Config {
-						verbosity: 1,
-						with_color: true,
-						annotate_image: true,
-						draw_diagonal: true,
-						draw_boundaries: true,
-						scaling_factor: 10,
-				};
-		}
-
-		#[test]
+	#[test]
     fn test_scale_matrix() {
-				let matrix: Array2<Option<i32>> = Array::from_elem((10, 10), None);
-				let scaled_matrix = scale_matrix(&matrix, &tests_config::CONFIG);
+		let matrix: Array2<Option<i32>> = Array::from_elem((10, 10), None);
+		let scaled_matrix = scale_matrix(&matrix, &tests_prelude::CONFIG);
 
-				assert_eq!(scaled_matrix.shape(), &[100, 100]);
+		assert_eq!(scaled_matrix.shape(), &[100, 100]);
     }
 
-		#[test]
+	#[test]
     fn test_scale_max() {
-				let mut matrix: Array2<Option<i32>> = Array::from_elem((10, 10), None);
+		let mut matrix: Array2<Option<i32>> = Array::from_elem((10, 10), None);
 
-				matrix[[1,2]] = Some(1);
-				matrix[[2,5]] = Some(7);
-				matrix[[4,5]] = Some(10);
-				matrix[[5,5]] = Some(5);
-				matrix[[5,4]] = Some(-15);
-				matrix[[8,9]] = Some(-190);
+		matrix[[1,2]] = Some(1);
+		matrix[[2,5]] = Some(7);
+		matrix[[4,5]] = Some(10);
+		matrix[[5,5]] = Some(5);
+		matrix[[5,4]] = Some(-15);
+		matrix[[8,9]] = Some(-190);
 
-				let (min, max) = max_and_min(&matrix);
+		let (min, max) = max_and_min(&matrix);
 
-				assert_eq!(-190, min);
-				assert_eq!(10, max);
+		assert_eq!(-190, min);
+		assert_eq!(10, max);
     }
 
     #[test]
     fn test_generate_image() {
-				let mut config = tests_config::CONFIG.clone();
-				config.scaling_factor = 50;
+		let mut config = tests_prelude::CONFIG.clone();
+		config.scaling_factor = 50;
 
-				let mut matrix: Array2<Option<i32>> = Array::from_elem((10, 10), None);
+		let mut matrix: Array2<Option<i32>> = Array::from_elem((10, 10), None);
 
-				matrix[[1,2]] = Some(1);
-				matrix[[2,5]] = Some(7);
-				matrix[[4,5]] = Some(10);
-				matrix[[5,5]] = Some(5);
-				matrix[[5,4]] = Some(-15);
-				matrix[[8,9]] = Some(-190);
+		matrix[[1,2]] = Some(1);
+		matrix[[2,5]] = Some(7);
+		matrix[[4,5]] = Some(10);
+		matrix[[5,5]] = Some(5);
+		matrix[[5,4]] = Some(-15);
+		matrix[[8,9]] = Some(-190);
 
-				let scaled_matrix: Array2<Option<i32>> = scale_matrix(&matrix, &config);
-				let image_name = "test_image.png";
+		let scaled_matrix: Array2<Option<i32>> = scale_matrix(&matrix, &config);
+		let image_name = "test_image.png";
         assert_eq!(generate_image(&scaled_matrix, &config, image_name).unwrap(), ());
 
-				// clean up tests
-				// let failed clean up result in error
-				if tests_config::CLEANUP_TESTS {
-						assert_eq!(std::fs::remove_file(image_name).unwrap(), ());
-				}
+		// clean up tests
+		// let failed clean up result in error
+		if tests_prelude::CLEANUP_TESTS {
+			assert_eq!(std::fs::remove_file(image_name).unwrap(), ());
+		}
     }
 }
