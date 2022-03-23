@@ -2,6 +2,7 @@ use libc::{c_int, __u8, __u32, size_t};
 use std::slice;
 use ndarray::{Array2, Array};
 
+pub mod types;
 pub mod rusty;
 pub use rusty::*;
 
@@ -47,7 +48,7 @@ pub extern fn read_cells(
 }
 
 fn call_rust(data: &[Cell], nrow: usize, ncol: usize) {
-		let config =  rusty::Config {
+		let config =  types::Config {
 				verbosity: 1,
 				with_color: true,
 				annotate_image: true,

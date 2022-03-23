@@ -17,32 +17,23 @@ of a 10x10 matrix.
 
 use image::{RgbaImage, Rgba};
 use image::error::ImageResult;
-use ndarray::{Array, Array2, ArrayBase, Dim, OwnedRepr};
+use ndarray::{Array, Array2};
 use num;
 
-/// Configuration for the output image and library.
-#[derive(Clone)]
-pub struct Config {
-		pub verbosity: u8,
-		pub with_color: bool,
-		pub annotate_image: bool,
-		pub draw_diagonal: bool,
-		pub draw_boundaries: bool, // draw row and column boundaries?
-		pub scaling_factor: u8,
-}
+use crate::types;
 
 // Colors
-const BLACK: Rgba<u8>  = Rgba([0, 0, 0, 255]);
+const _BLACK: Rgba<u8>  = Rgba([0, 0, 0, 255]);
+const _GREEN: Rgba<u8> = Rgba([0, 255, 0,  255]);
 const WHITE: Rgba<u8> = Rgba([255, 255, 255, 255]);
 const RED: Rgba<u8> = Rgba([255, 0, 0,  125]);
-const _GREEN: Rgba<u8> = Rgba([0, 255, 0,  255]);
 const BLUE: Rgba<u8> = Rgba([0, 0, 255,  255]);
 
 /// Scale the 2 dimensional matrix by a scaling factor set in [Config](self::Config).
 ///
 /// Uses `floor(pos / scaling_factor)`.
 // TODO: do we pay a cost for clone?
-pub fn scale_matrix<T>(matrix: &Array2<Option<T>>, config: &Config) -> Array2<Option<T>>
+pub fn scale_matrix<T>(matrix: &Array2<Option<T>>, config: &types::Config) -> Array2<Option<T>>
 where
 		T: Clone
 {
@@ -143,8 +134,6 @@ where T: num::Zero + num::cast::ToPrimitive + Copy + std::cmp::PartialOrd
 
 	let (min, max) = max_and_min(matrix);
 
-
-
     // let (y_max, x_max) = matrix.dim();
 	let matrix_dimensions: &[usize] = matrix.shape();
 
@@ -161,6 +150,7 @@ where T: num::Zero + num::cast::ToPrimitive + Copy + std::cmp::PartialOrd
 		for y in 0..=y_max {
 			// Image annotations
 
+            // use if...else
 			if config.annotate_image {
 				// Diagonals
 				if config.draw_diagonal && x == y {
@@ -178,8 +168,7 @@ where T: num::Zero + num::cast::ToPrimitive + Copy + std::cmp::PartialOrd
 				}
 			}
 
-
-            if !config.annotate_image && x == x_max || y == y_max {
+            if !config.annotate_image && (x == x_max || y == y_max) {
                 continue;
             }
 
